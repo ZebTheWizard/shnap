@@ -35,7 +35,8 @@ class FFMPEG
         return $this->push("-c", "copy");
     }
 
-    public function run() {
+    public function output($file) {
+        $this->push($file);
         $params = $this->params;
         $cmd = implode(" ", $params);
         exec($cmd . " 2>&1", $output, $code);

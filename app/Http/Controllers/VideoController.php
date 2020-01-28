@@ -72,7 +72,7 @@ class VideoController extends Controller
                 $ff->input($audio);
             }
 
-            $res = $ff->copy()->run();
+            $res = $ff->copy()->output($output);
             if ($res["code"] === 0) {
                 unlink($video);
                 if ($audio) {
