@@ -58,12 +58,12 @@ class VideoController extends Controller
         curl_close($ch);
 
         Storage::disk('local')->put($name.$ext, $contents);
-        return "/" . storage_path("app/" . $name.$ext);
+        return storage_path("app/" . $name.$ext);
     }
 
     private function manipulateVideo($name, $video_url, $audio_url) {
         
-        $output = "/" . storage_path("app/".$name."output.mp4");
+        $output = storage_path("app/".$name."output.mp4");
         if ($video = $this->download($video_url, $name, "video.mp4")) {
             $ff = new FFMPEG;
             $ff->length("00:00:30")->input($video);
