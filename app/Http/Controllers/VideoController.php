@@ -10,16 +10,37 @@ use Illuminate\Support\Facades\File;
 
 class VideoController extends Controller
 {
-    public function upload(Request $r) {
-        $disk = Storage::disk('spaces');
-        $hash = hash("sha256", now());
-        $output = $this->manipulateVideo($hash, $r->video_url, $r->audio_url);
-        $file = $disk->put("shnap/".$hash, file_get_contents($output), ['visibility' => 'public']);
-        if ($file) {
-            $url = env("DO_SPACES_SUBDOMAIN") . '/shnap/' . $hash;
-            $status = $this->makeTweet($output, $r->status);
-            return response()->json($status);
+
+    private function upload(Request $r, $trim=true) {
+        $hash = $r->id . ($trim ? "_trimmed" : "_og");
+        $video = $hash . "_output.mp4";
+        
+
+        if (Storage::disk('local')->exists($video)) {
+            $output = storage_path("app/" . $video);
+        } else {
+            $output = $this->manipulateVideo($hash, $r->video, $r->audio, $trim);
         }
+        return [
+            "path" => $output,
+            "name" => $video
+        ];
+    }
+
+    public function uploadThenDownload(Request $r) {
+        $upload = $this->upload($r, false);
+        // dd($upload);
+        return Storage::disk('local')->download($upload['name'], $upload["name"]);
+    }
+
+    public function uploadThenTweet(Request $r) {
+        // $disk = Storage::disk('spaces');
+        // $hash = hash("sha256", now());
+        // $output = $this->manipulateVideo($hash, $r->video_url, $r->audio_url);
+        // $file = $disk->put("shnap/".$hash, file_get_contents($output), ['visibility' => 'public']);
+        $upload = $this->upload($r);
+        $status = $this->makeTweet($upload["path"], $r->status);
+        return response()->json($status);
     }
 
     private function makeTweet($output, $status) {
@@ -40,9 +61,9 @@ class VideoController extends Controller
                 'status' => $status,
                 'media_ids' => $media->media_id_string
             ]);
-            return true;
+            return $result;
         } else {
-            return false;
+            return $media;
         }
     }
 
@@ -61,15 +82,21 @@ class VideoController extends Controller
         return storage_path("app/" . $name.$ext);
     }
 
-    private function manipulateVideo($name, $video_url, $audio_url) {
+    private function manipulateVideo($name, $video_url, $audio_url, $trim=true) {
         
-        $output = storage_path("app/".$name."output.mp4");
-        if ($video = $this->download($video_url, $name, "video.mp4")) {
+        $output = storage_path("app/".$name."_output.mp4");
+        if ($video = $this->download($video_url, $name, "_video.mp4")) {
             $ff = new FFMPEG;
-            $ff->length("00:00:30")->input($video);
+            if ($trim) {
+                $ff->start("00:00:00");
+            }
+            $ff->input($video);
 
-            if ($audio = $this->download($audio_url, $name, "audio.mp4")) {
+            if ($audio = $this->download($audio_url, $name, "_audio.mp4")) {
                 $ff->input($audio);
+            }
+            if ($trim) {
+                $ff->end("00:00:30");
             }
 
             $res = $ff->copy()->output($output);

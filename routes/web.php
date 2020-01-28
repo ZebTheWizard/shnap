@@ -21,4 +21,5 @@ Route::get('/home', 'HomeController@index')->name('home');
 Route::get('/auth/redirect/{provider}', 'SocialController@redirect');
 Route::get('/twitter.php', 'SocialController@callback');
 
-Route::post("/upload", "VideoController@upload");
+Route::post("/tweet", "VideoController@uploadThenTweet");
+Route::post("/download", "VideoController@uploadThenDownload");

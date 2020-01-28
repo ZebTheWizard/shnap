@@ -36,10 +36,10 @@
         },
         methods: {
             makeTweet() {
-                window.axios.post('/upload', {
+                window.axios.post('/tweet', {
                     status: this.message,
-                    video_url: this.tweet.video,
-                    audio_url: this.tweet.audio,
+                    video: this.tweet.video,
+                    audio: this.tweet.audio,
                     id: this.tweet.id,
                 })
                 .then(res => {

@@ -2064,10 +2064,10 @@ __webpack_require__.r(__webpack_exports__);
   },
   methods: {
     makeTweet: function makeTweet() {
-      window.axios.post('/upload', {
+      window.axios.post('/tweet', {
         status: this.message,
-        video_url: this.tweet.video,
-        audio_url: this.tweet.audio,
+        video: this.tweet.video,
+        audio: this.tweet.audio,
         id: this.tweet.id
       }).then(function (res) {
         if (res.data) {
@@ -2141,6 +2141,16 @@ __webpack_require__.r(__webpack_exports__);
 //
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: ['data'],
+  computed: {
+    tweet: function tweet() {
+      return {
+        video: this.post.media.reddit_video.fallback_url,
+        audio: this.post.url + '/audio',
+        id: this.post.id,
+        status: this.title
+      };
+    }
+  },
   data: function data() {
     return {
       post: {},
@@ -2177,33 +2187,42 @@ __webpack_require__.r(__webpack_exports__);
       }
     },
     showModal: function showModal() {
-      console.log('trying to show modal');
-      this.$emit('tweeting', {
-        video: this.post.media.reddit_video.fallback_url,
-        audio: this.post.url + '/audio',
-        id: this.post.id,
-        status: this.title
+      this.$emit('tweeting', this.tweet);
+    },
+    download: function download() {
+      var _this = this;
+
+      window.axios.post('/download', this.tweet, {
+        responseType: 'blob'
+      }).then(function (res) {
+        console.log(res);
+        var url = window.URL.createObjectURL(res.data);
+        var link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', _this.tweet.id + ".mp4");
+        document.body.appendChild(link);
+        link.click();
       });
     }
   },
   mounted: function mounted() {
-    var _this = this;
+    var _this2 = this;
 
     this.listing = this.data;
     var link = "https://www.reddit.com".concat(this.listing.permalink, ".json");
     fetch(link).then(function (response) {
       return response.json();
     }).then(function (res) {
-      _this.post = res[0].data.children[0].data;
+      _this2.post = res[0].data.children[0].data;
 
-      if (!_this.post.media) {
-        _this.broken = true;
+      if (!_this2.post.media) {
+        _this2.broken = true;
         return;
       }
 
-      _this.title = _this.post.title || _this.listing.title;
-      _this.upvote_ratio = Math.floor((_this.post.upvote_ratio || _this.listing.upvote_ratio) * 100);
-      _this.is_gif = _this.post.media.reddit_video.is_gif;
+      _this2.title = _this2.post.title || _this2.listing.title;
+      _this2.upvote_ratio = Math.floor((_this2.post.upvote_ratio || _this2.listing.upvote_ratio) * 100);
+      _this2.is_gif = _this2.post.media.reddit_video.is_gif;
     });
   }
 });
@@ -38432,8 +38451,11 @@ var render = function() {
             ),
             _vm._v(" "),
             _c(
-              "a",
-              { staticClass: "btn btn-success mr-3", attrs: { href: "" } },
+              "button",
+              {
+                staticClass: "btn btn-success mr-3",
+                on: { click: _vm.download }
+              },
               [_vm._v("Download")]
             ),
             _vm._v(" "),

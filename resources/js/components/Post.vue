@@ -41,7 +41,7 @@
             </vid>
             <div class="d-flex align-items-center">
                 <button class="btn btn-primary mr-3" @click="showModal">Post</button>
-                <a href="" class="btn btn-success mr-3">Download</a>
+                <button class="btn btn-success mr-3" @click="download">Download</button>
                 <a :href="post.url" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary">View</a>
             </div>
         </div>
@@ -51,6 +51,16 @@
 <script>
     export default {
         props: ['data'],
+        computed: {
+            tweet () {
+                return {
+                    video: this.post.media.reddit_video.fallback_url,
+                    audio: this.post.url + '/audio',
+                    id: this.post.id,
+                    status: this.title,
+                }
+            }
+        },
         data () {
             return {
                 post: {},
@@ -83,12 +93,20 @@
                 }
             },
             showModal () {
-                console.log('trying to show modal')
-                this.$emit('tweeting', {
-                    video: this.post.media.reddit_video.fallback_url,
-                    audio: this.post.url + '/audio',
-                    id: this.post.id,
-                    status: this.title,
+                this.$emit('tweeting', this.tweet)
+            },
+            download () {
+                window.axios.post('/download', this.tweet, {
+                    responseType: 'blob'
+                })
+                .then(res => {
+                    console.log(res)
+                    const url = window.URL.createObjectURL(res.data);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', this.tweet.id + ".mp4");
+                    document.body.appendChild(link);
+                    link.click();
                 })
             }
         },
