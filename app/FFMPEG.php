@@ -38,7 +38,7 @@ class FFMPEG
     public function run() {
         $params = $this->params;
         $cmd = implode(" ", $params);
-        exec($cmd, $output, $code);
+        exec($cmd . " 2>&1", $output, $code);
         return [
             "params" => $params,
             "cmd" => $cmd,
