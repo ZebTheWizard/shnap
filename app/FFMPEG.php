@@ -4,7 +4,7 @@ namespace App;
 
 class FFMPEG
 {
-    private $params;
+    private $params = [];
 
     private function push(...$values) {
         array_push($this->params, ...$values);
