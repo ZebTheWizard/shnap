@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Abraham\TwitterOAuth\TwitterOAuth;
+use App\FFMPEG;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
@@ -57,27 +58,30 @@ class VideoController extends Controller
         curl_close($ch);
 
         Storage::disk('local')->put($name.$ext, $contents);
-        return storage_path("app/" . $name.$ext);
+        return "/" . storage_path("app/" . $name.$ext);
     }
 
     private function manipulateVideo($name, $video_url, $audio_url) {
-        $output = storage_path("app/".$name."output.mp4");
+        
+        $output = "/" . storage_path("app/".$name."output.mp4");
         if ($video = $this->download($video_url, $name, "video.mp4")) {
-            $params = ["ffmpeg", "-ss", "00:00:00", "-i", $video];
+            $ff = new FFMPEG;
+            $ff->length("00:00:30")->input($video);
 
             if ($audio = $this->download($audio_url, $name, "audio.mp4")) {
-                array_push($params, "-i", $audio);
+                $ff->input($audio);
             }
 
-            array_push($params, "-to", "00:00:30", "-c", "copy", $output);
-            shell_exec(implode(" ", $params));
-
-            unlink($video);
-            if ($audio) {
-                unlink($audio);
+            $res = $ff->copy()->run();
+            if ($res["code"] === 0) {
+                unlink($video);
+                if ($audio) {
+                    unlink($audio);
+                }
+                return $output;
+            } else {
+                dd($res);
             }
         }
-        
-        return $output;
     }
 }
